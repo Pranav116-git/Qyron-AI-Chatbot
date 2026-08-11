@@ -1,50 +1,138 @@
 # Qyron
 
-An AI-powered chat application with persistent conversations, user authentication, and a glassmorphism Material Design 3 interface.
+Qyron is a production-ready, full-stack AI chat application featuring persistent conversation threads, secure cookie-based user authentication, and Gemini-powered intelligence served via OpenRouter. Built with a modern glassmorphism Material Design 3 interface, it delivers a sleek, responsive workspace for seamless AI interaction.
 
-## Stack
+---
 
-**Frontend:** React 19 + Vite + Tailwind CSS (Material Design 3)  
-**Backend:** Python 3.11+ + FastAPI + SQLAlchemy (async)  
-**Database:** PostgreSQL (production) / SQLite (development)  
-**AI:** OpenRouter / Gemini (server-side only)  
-**Deployment:** Netlify (frontend) + Render (backend)
+## Preview
 
-## Features
+![Qyron Main Interface](docs/images/qyron-main-ui.png.png)
 
-- AI chat powered by OpenRouter/Gemini with server-side key management
-- Cookie-based session authentication (HttpOnly, Secure, SameSite)
-- CSRF protection (double-submit cookie pattern)
-- Rate limiting (per-minute, per-day, global, auth)
-- Persistent conversations and saved prompts
-- User settings with theme toggle (light/dark)
-- Account management (profile, password, delete)
-- Usage tracking dashboard
-- Responsive glassmorphism UI
+*Qyron's glassmorphism interface featuring conversation threads, category quick-prompts, and dark/light themes.*
 
-## Getting Started
+---
+
+## What I Built
+
+Qyron is designed as a complete, full-stack AI chat environment that pairs modern frontend aesthetics with enterprise-grade backend security:
+
+- **AI-Powered Chat**: Server-side streaming communication with Gemini models via OpenRouter.
+- **Persistent Conversations**: Complete history management with thread creation, search, rename, archive, and deletion.
+- **User Authentication**: Secure account registration, login, multi-session management, and password reset flows.
+- **Saved Prompts**: Custom prompt library management for quick workflow execution.
+- **User Settings & Preferences**: Per-user theme preferences (light/dark) persisted across devices.
+- **Usage Tracking**: Detailed dashboard tracking API calls and usage stats over customizable timeframes.
+- **Security Controls**: Server-side key protection, rate limiting, CSRF double-submit cookies, and Argon2id password hashing.
+- **Responsive UI**: Material Design 3 UI with smooth transitions and glassmorphism styling across mobile and desktop.
+
+---
+
+## Architecture
+
+![Qyron System Architecture](docs/images/qyron-architecture.png.png)
+
+### System Flow
+`User` → `React Frontend (Vite)` → `FastAPI Backend (Async SQLAlchemy)` → `PostgreSQL / OpenRouter` → `Gemini`
+
+- **Frontend**: Built with React 19, Vite, and Tailwind CSS. It communicates with the backend via REST endpoints and handles local UI state, authentication context, and theme settings.
+- **Backend**: Asynchronous Python FastAPI application using SQLAlchemy with `asyncpg` / `aiosqlite`. It manages session validation, rate limiting, database interactions, and OpenRouter API integration.
+- **Database**: Relational schema supporting PostgreSQL in production (Render) and SQLite for local development.
+- **AI Integration**: OpenRouter API proxying Google Gemini models with all API keys kept strictly server-side.
+- **Deployment**: Static frontend hosted on Netlify; web service hosted on Render with managed PostgreSQL.
+
+---
+
+## Key Features
+
+![Qyron Feature Overview](docs/images/qyron-features.png.png)
+
+- **AI-Powered Messaging**: Intelligent multi-turn chat interactions with live streaming support and edit/retry capability.
+- **Secure Authentication**: Cookie-backed HTTP-only sessions with Argon2id password hashing and session revocation.
+- **Persistent Chat History**: Full conversation management including full-text search, archiving, and automatic titling.
+- **Saved Prompt Library**: User-curated prompt templates for rapid reuse.
+- **Usage Analytics**: Real-time tracking of message counts and daily usage limits per user.
+- **Customizable Preferences**: Light and dark theme toggles synced with user settings backend.
+- **Layered Rate Limiting**: Multi-tiered throttling (per-minute, daily, auth window, and IP-level) to protect backend services.
+- **Responsive Workspace**: Seamless Material Design 3 layout adapted for both desktop and mobile screens.
+
+---
+
+## By the Numbers
+
+- **9** Async Database Models (`User`, `UserSession`, `Conversation`, `Message`, `SavedPrompt`, `UserSettings`, `PasswordReset`, `EmailVerification`, `UsageLog`)
+- **6** API Router Modules (`auth`, `chat`, `conversations`, `saved-prompts`, `settings`, `usage`)
+- **29** Implemented REST API Endpoints
+- **10** Authentication & Account Security Operations
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| **Frontend** | React 19, Vite, Tailwind CSS |
+| **Backend** | Python 3.11+, FastAPI, SQLAlchemy (async) |
+| **Database** | PostgreSQL (Production) / SQLite (Development) |
+| **AI** | OpenRouter / Gemini |
+| **Deployment** | Netlify / Render |
+
+---
+
+## Technical Decisions
+
+1. **FastAPI for Async I/O**:
+   - *Choice*: FastAPI with Python `asyncio` and `asyncpg` / `aiosqlite`.
+   - *Rationale*: Non-blocking asynchronous handlers allow efficient handling of high-concurrency requests and AI API proxying without thread bloat.
+   - *Trade-off*: Requires async-compatible drivers and careful context management across database sessions.
+
+2. **Server-Side AI API Key Management**:
+   - *Choice*: OpenRouter API integration strictly encapsulated within backend service routes.
+   - *Rationale*: Prevents exposing private API keys or tokens to client-side code, allowing centralized rate limiting and usage quotas.
+   - *Trade-off*: Increases backend workload as all AI message traffic must proxy through the FastAPI server.
+
+3. **Cookie-Based Session Authentication with Double-Submit CSRF**:
+   - *Choice*: Server-side hashed session tokens stored in `HttpOnly`, `Secure`, `SameSite` cookies alongside a CSRF token header check.
+   - *Rationale*: Protects tokens from XSS script access while mitigating cross-site request forgery without requiring local storage management.
+   - *Trade-off*: Requires explicit CORS credentials configuration and secure cookie handling across separate frontend and backend domains.
+
+4. **Dual Database Architecture (SQLite / PostgreSQL)**:
+   - *Choice*: SQLAlchemy ORM abstraction supporting SQLite for local dev and PostgreSQL for production.
+   - *Rationale*: Enables rapid zero-dependency local development while deploying to a high-concurrency relational database in production.
+   - *Trade-off*: Database migrations and column types must remain compatible across both SQL dialects.
+
+---
+
+## Security
+
+- **Password Security**: Passwords hashed using Argon2id with unique salts.
+- **Session Management**: Session tokens stored server-side with `HttpOnly`, `Secure`, and `SameSite` attributes.
+- **CSRF Protection**: Double-submit cookie pattern verified on state-changing requests.
+- **Rate Limiting**: Multi-tiered protection against brute-force and resource exhaustion (auth endpoints, per-minute, and daily caps).
+- **Security Headers**: Content Security Policy (CSP), `X-Frame-Options`, `X-Content-Type-Options`, and `Referrer-Policy` enabled.
+- **Input Validation**: Strict request schema validation via Pydantic models.
+- **API Key Isolation**: OpenRouter credentials remain isolated in server environment variables.
+
+---
+
+## Run Locally
 
 ### Prerequisites
-
 - Python 3.11+
 - Node.js 18+
-- PostgreSQL (production) or SQLite (development, no install needed)
 
 ### Backend Setup
 
 ```bash
 cd backend
 python -m venv venv
+
 # Windows:
 venv\Scripts\activate
 # macOS/Linux:
 source venv/bin/activate
 
 cp .env.example .env
-# Edit .env with your values:
-#   OPENROUTER_API_KEY=your_key_here
-#   DATABASE_URL=postgresql+asyncpg://user:pass@localhost:5432/qyron
-#   SESSION_SECRET=generate_a_random_secret
+# Configure OPENROUTER_API_KEY and SESSION_SECRET in .env
 
 pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
@@ -58,126 +146,11 @@ npm install
 npm run dev
 ```
 
-The frontend runs on `http://localhost:5173` and proxies `/api` requests to the backend.
+The frontend app runs locally at `http://localhost:5173` and proxies API requests to `http://localhost:8000`.
 
-## Environment Variables
-
-### Backend (`backend/.env`)
-
-| Variable | Required | Default | Description |
-|---|---|---|---|
-| `OPENROUTER_API_KEY` | Yes | - | OpenRouter API key |
-| `OPENROUTER_MODEL` | No | `google/gemini-2.0-flash-001` | AI model to use |
-| `DATABASE_URL` | Yes | `sqlite+aiosqlite:///./qyron.db` | Database connection string |
-| `SESSION_SECRET` | Yes | - | Secret for session tokens (64+ char random string) |
-| `FRONTEND_URL` | Yes | `http://localhost:5173` | Frontend URL for CORS |
-| `ENVIRONMENT` | No | `development` | `development` or `production` |
-| `CHAT_RATE_LIMIT_PER_MINUTE` | No | `20` | Max AI messages per minute per user |
-| `CHAT_DAILY_LIMIT` | No | `200` | Max AI messages per day per user |
-| `AUTH_RATE_LIMIT` | No | `10` | Max auth attempts per window |
-| `AUTH_RATE_WINDOW` | No | `300` | Auth rate window in seconds |
-| `GLOBAL_RATE_LIMIT_PER_MINUTE` | No | `120` | Max requests per minute per IP |
-| `SMTP_HOST` | No | - | SMTP server for password reset emails |
-| `SMTP_PORT` | No | `587` | SMTP port |
-| `SMTP_USERNAME` | No | - | SMTP username |
-| `SMTP_PASSWORD` | No | - | SMTP password |
-| `EMAIL_FROM` | No | - | From address for emails |
-
-### Frontend
-
-| Variable | Description |
-|---|---|
-| `VITE_API_URL` | Backend URL (defaults to `http://localhost:8000`) |
-
-## Database
-
-The app uses async SQLAlchemy with the following models:
-
-- **User** - User accounts with email/password auth
-- **UserSession** - Active sessions (auto-cleaned on expiry)
-- **Conversation** - Chat conversations (archivable)
-- **Message** - Messages within conversations
-- **SavedPrompt** - User-saved prompt templates
-- **UserSettings** - Per-user preferences (theme)
-- **PasswordReset** - Password reset tokens (15min expiry)
-- **EmailVerification** - Email verification tokens
-- **UsageLog** - AI usage tracking per user
-
-Tables are created automatically on first startup.
-
-## API Endpoints
-
-### Auth (`/api/auth`)
-- `POST /register` - Create account
-- `POST /login` - Sign in
-- `POST /logout` - Sign out
-- `POST /logout-all` - Sign out all sessions
-- `GET /me` - Get current user
-- `POST /forgot-password` - Request password reset
-- `POST /reset-password` - Reset password with token
-- `POST /change-password` - Change password (requires current password)
-- `PUT /profile` - Update name
-- `DELETE /account` - Delete account
-
-### Chat (`/api/chat`)
-- `POST /chat` - Send messages, get AI response
-
-### Conversations (`/api/conversations`)
-- `GET /conversations` - List conversations
-- `GET /conversations/archived` - List archived
-- `GET /conversations/{id}` - Get with messages
-- `POST /conversations` - Create
-- `PUT /conversations/{id}` - Rename
-- `POST /conversations/{id}/archive` - Archive
-- `POST /conversations/{id}/unarchive` - Unarchive
-- `DELETE /conversations/{id}` - Delete
-- `GET /conversations/search?q=` - Search
-
-### Saved Prompts (`/api/saved-prompts`)
-- CRUD operations
-
-### Settings (`/api/settings`)
-- `GET /settings` - Get theme
-- `PUT /settings` - Update theme
-
-### Usage (`/api/usage`)
-- `GET /usage/stats` - Get usage stats (today/week/month/all-time)
-
-### Health
-- `GET /health` - Health check
-
-## Security
-
-- Passwords hashed with Argon2id
-- Sessions stored server-side, cookie contains only a session token
-- HttpOnly + Secure + SameSite=Lax cookies (production)
-- CSRF protection via double-submit cookie pattern
-- Rate limiting on all endpoints
-- CSP and security headers in production
-- Input validation on all endpoints (max_length enforced)
-- No AI API keys exposed to the browser
+---
 
 ## Deployment
 
-### Frontend (Netlify)
-
-1. Push to GitHub
-2. Connect repo in Netlify dashboard
-3. Set build directory to `frontend`
-4. Set `VITE_API_URL` to your Render backend URL
-
-### Backend (Render)
-
-1. Push to GitHub
-2. Create a new Web Service on Render
-3. Set root directory to `backend`
-4. Add all environment variables from `.env.example`
-5. Render will auto-deploy on push
-
-### Database
-
-Use any PostgreSQL provider (Neon, Supabase, Render Postgres, etc.). Set `DATABASE_URL` in your Render environment variables.
-
-## License
-
-MIT
+- **Frontend (Netlify)**: Set Base directory to `frontend`, Build command to `npm run build`, and Publish directory to `dist`. Set `VITE_API_URL` to your production backend URL.
+- **Backend (Render)**: Set Root directory to `backend` and set environment variables as detailed in `backend/.env.example`.
