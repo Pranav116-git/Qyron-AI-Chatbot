@@ -46,7 +46,10 @@ async function apiCall(endpoint, options = {}) {
   const data = await response.json().catch(() => null)
 
   if (response.status === 401) {
-    window.location.href = '/login'
+    const isAuthPage = ['/login', '/register', '/forgot-password', '/reset-password'].includes(window.location.pathname)
+    if (!isAuthPage) {
+      window.location.href = '/login'
+    }
     throw new Error('Session expired. Please log in again.')
   }
 

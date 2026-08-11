@@ -9,7 +9,7 @@ export function AuthProvider({ children }) {
 
   const checkAuth = useCallback(async () => {
     try {
-      await fetchCsrfToken()
+      await fetchCsrfToken().catch(() => null)
       const data = await authApi.me()
       setUser(data)
     } catch {
