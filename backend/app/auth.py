@@ -66,12 +66,13 @@ async def create_session(db: AsyncSession, user: User, response: Response) -> Us
     await db.refresh(session)
 
     is_secure = ENVIRONMENT == "production"
+    samesite_setting = "none" if is_secure else "lax"
     response.set_cookie(
         key=SESSION_COOKIE_NAME,
         value=token,
         httponly=True,
         secure=is_secure,
-        samesite="lax",
+        samesite=samesite_setting,
         max_age=SESSION_DURATION_HOURS * 3600,
         path="/",
     )

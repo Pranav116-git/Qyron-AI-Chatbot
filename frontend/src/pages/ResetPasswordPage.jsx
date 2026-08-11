@@ -1,11 +1,5 @@
 import { useState } from 'react'
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
-
-function getCsrfToken() {
-  const match = document.cookie.match(/qyron_csrf=([^;]+)/)
-  return match ? match[1] : ''
-}
+import { authApi } from '../services/api'
 
 export default function ResetPasswordPage({ onSwitchToLogin }) {
   const [token, setToken] = useState('')
@@ -31,22 +25,7 @@ export default function ResetPasswordPage({ onSwitchToLogin }) {
 
     setLoading(true)
     try {
-      const response = await fetch(`${API_URL}/api/auth/reset-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': getCsrfToken(),
-        },
-        body: JSON.stringify({
-          token,
-          password,
-          confirm_password: confirmPassword,
-        }),
-      })
-      const data = await response.json()
-      if (!response.ok) {
-        throw new Error(data.detail || 'Failed to reset password.')
-      }
+      await authApi.resetPassword(token, password, confirmPassword)
       setSuccess(true)
     } catch (err) {
       setError(err.message)

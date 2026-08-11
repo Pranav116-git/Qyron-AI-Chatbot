@@ -1,11 +1,5 @@
 import { useState } from 'react'
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
-
-function getCsrfToken() {
-  const match = document.cookie.match(/qyron_csrf=([^;]+)/)
-  return match ? match[1] : ''
-}
+import { authApi } from '../services/api'
 
 export default function ForgotPasswordPage({ onSwitchToLogin }) {
   const [email, setEmail] = useState('')
@@ -18,19 +12,8 @@ export default function ForgotPasswordPage({ onSwitchToLogin }) {
     setError('')
     setLoading(true)
     try {
-      const response = await fetch(`${API_URL}/api/auth/forgot-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': getCsrfToken(),
-        },
-        body: JSON.stringify({ email }),
-      })
-      if (response.ok) {
-        setSent(true)
-      } else {
-        setSent(true)
-      }
+      await authApi.forgotPassword(email)
+      setSent(true)
     } catch {
       setSent(true)
     } finally {

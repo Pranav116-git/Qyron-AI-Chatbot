@@ -1,8 +1,27 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
+let cachedCsrfToken = ''
+
+export async function fetchCsrfToken() {
+  try {
+    const response = await fetch(`${API_URL}/api/auth/csrf`, {
+      credentials: 'include',
+    })
+    if (response.ok) {
+      const data = await response.json()
+      if (data && data.csrf_token) {
+        cachedCsrfToken = data.csrf_token
+        return data.csrf_token
+      }
+    }
+  } catch (err) {
+    console.error('Failed to fetch CSRF token:', err)
+  }
+  return cachedCsrfToken
+}
+
 function getCsrfToken() {
-  const match = document.cookie.match(/qyron_csrf=([^;]+)/)
-  return match ? match[1] : ''
+  return cachedCsrfToken
 }
 
 async function apiCall(endpoint, options = {}) {
@@ -12,6 +31,9 @@ async function apiCall(endpoint, options = {}) {
   }
 
   if (options.method && options.method !== 'GET') {
+    if (!cachedCsrfToken) {
+      await fetchCsrfToken()
+    }
     headers['X-CSRF-Token'] = getCsrfToken()
   }
 
@@ -41,6 +63,9 @@ async function apiCall(endpoint, options = {}) {
 }
 
 export async function sendMessage(messages, conversationId = null) {
+  if (!cachedCsrfToken) {
+    await fetchCsrfToken()
+  }
   let response
   try {
     response = await fetch(`${API_URL}/api/chat`, {

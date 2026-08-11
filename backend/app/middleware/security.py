@@ -54,12 +54,13 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             response = await call_next(request)
             if not request.cookies.get(CSRF_COOKIE_NAME):
                 token = generate_csrf_token()
+                samesite_setting = "none" if ENVIRONMENT == "production" else "lax"
                 response.set_cookie(
                     key=CSRF_COOKIE_NAME,
                     value=hash_csrf_token(token),
                     httponly=False,
                     secure=ENVIRONMENT == "production",
-                    samesite="lax",
+                    samesite=samesite_setting,
                     max_age=3600,
                     path="/",
                 )

@@ -17,7 +17,8 @@ from app.auth import (
     get_current_user, logout_session, logout_all_sessions,
     generate_password_reset_token, hash_token, SESSION_COOKIE_NAME,
 )
-from app.config import SMTP_HOST, SMTP_USERNAME, SMTP_PASSWORD, EMAIL_FROM, AUTH_RATE_LIMIT, AUTH_RATE_WINDOW
+from app.config import SMTP_HOST, SMTP_USERNAME, SMTP_PASSWORD, EMAIL_FROM, AUTH_RATE_LIMIT, AUTH_RATE_WINDOW, ENVIRONMENT
+from app.middleware.security import CSRF_COOKIE_NAME, generate_csrf_token, hash_csrf_token
 
 import logging
 
@@ -52,6 +53,26 @@ def _check_auth_rate_limit(ip: str, action: str) -> None:
 
 def _get_client_ip(request: Request) -> str:
     return request.client.host if request.client else "unknown"
+
+
+@router.get("/api/auth/csrf")
+async def get_csrf(response: Response, request: Request):
+    token_hash = request.cookies.get(CSRF_COOKIE_NAME)
+    if not token_hash:
+        raw_token = generate_csrf_token()
+        token_hash = hash_csrf_token(raw_token)
+
+    samesite_setting = "none" if ENVIRONMENT == "production" else "lax"
+    response.set_cookie(
+        key=CSRF_COOKIE_NAME,
+        value=token_hash,
+        httponly=False,
+        secure=ENVIRONMENT == "production",
+        samesite=samesite_setting,
+        max_age=3600,
+        path="/",
+    )
+    return {"csrf_token": token_hash}
 
 
 @router.post("/api/auth/register", response_model=UserResponse)

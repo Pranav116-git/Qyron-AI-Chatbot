@@ -1,13 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { authApi, fetchCsrfToken } from '../services/api'
 
 const AuthContext = createContext(null)
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
-
-function getCsrfToken() {
-  const match = document.cookie.match(/qyron_csrf=([^;]+)/)
-  return match ? match[1] : ''
-}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
@@ -15,15 +9,9 @@ export function AuthProvider({ children }) {
 
   const checkAuth = useCallback(async () => {
     try {
-      const response = await fetch(`${API_URL}/api/auth/me`, {
-        credentials: 'include',
-      })
-      if (response.ok) {
-        const data = await response.json()
-        setUser(data)
-      } else {
-        setUser(null)
-      }
+      await fetchCsrfToken()
+      const data = await authApi.me()
+      setUser(data)
     } catch {
       setUser(null)
     } finally {
@@ -36,55 +24,20 @@ export function AuthProvider({ children }) {
   }, [checkAuth])
 
   const login = useCallback(async (email, password) => {
-    const response = await fetch(`${API_URL}/api/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRF-Token': getCsrfToken(),
-      },
-      credentials: 'include',
-      body: JSON.stringify({ email, password }),
-    })
-    const data = await response.json()
-    if (!response.ok) {
-      throw new Error(data.detail || 'Login failed.')
-    }
+    const data = await authApi.login(email, password)
     setUser(data)
     return data
   }, [])
 
   const register = useCallback(async (name, email, password, confirmPassword) => {
-    const response = await fetch(`${API_URL}/api/auth/register`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRF-Token': getCsrfToken(),
-      },
-      credentials: 'include',
-      body: JSON.stringify({
-        name,
-        email,
-        password,
-        confirm_password: confirmPassword,
-      }),
-    })
-    const data = await response.json()
-    if (!response.ok) {
-      throw new Error(data.detail || 'Registration failed.')
-    }
+    const data = await authApi.register(name, email, password, confirmPassword)
     setUser(data)
     return data
   }, [])
 
   const logout = useCallback(async () => {
     try {
-      await fetch(`${API_URL}/api/auth/logout`, {
-        method: 'POST',
-        headers: {
-          'X-CSRF-Token': getCsrfToken(),
-        },
-        credentials: 'include',
-      })
+      await authApi.logout()
     } finally {
       setUser(null)
     }
