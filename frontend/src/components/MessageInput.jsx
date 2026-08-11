@@ -60,10 +60,10 @@ export default function MessageInput({ onSend, isLoading, onStop, editingMessage
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-30 px-4 pb-4 md:pl-72 md:pr-8 flex justify-center pointer-events-none">
-      <div className="w-full max-w-3xl pointer-events-auto">
+    <div className="fixed bottom-0 left-0 right-0 z-30 px-4 pb-3 md:pl-72 md:pr-8 flex flex-col items-center pointer-events-none">
+      <div className="w-full max-w-3xl pointer-events-auto flex flex-col items-center">
         {editingMessage && (
-          <div className="flex items-center justify-between px-4 py-2 mb-2 rounded-t-2xl text-sm" style={{ background: 'var(--surface-container)', color: 'var(--on-surface)' }}>
+          <div className="w-full flex items-center justify-between px-4 py-2 mb-2 rounded-t-2xl text-sm" style={{ background: 'var(--surface-container)', color: 'var(--on-surface)' }}>
             <span className="flex items-center gap-2 truncate">
               <span className="material-symbols-outlined text-base" style={{ color: 'var(--primary)' }}>edit</span>
               Editing message
@@ -109,6 +109,9 @@ export default function MessageInput({ onSend, isLoading, onStop, editingMessage
             </button>
           )}
         </form>
+        <p className="text-xs text-center text-on-surface-variant/60 mt-2 select-none">
+          Qyron can make mistakes. Please verify important information.
+        </p>
       </div>
     </div>
   )
