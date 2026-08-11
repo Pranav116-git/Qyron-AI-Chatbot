@@ -4,7 +4,6 @@ export default function Sidebar({
   isOpen, onClose, onNewChat,
   conversations,
   onLoadConversation, onDeleteConversation, onRenameConversation,
-  user, onLogout, onOpenAccount,
   activeConversationId,
 }) {
   const [renamingId, setRenamingId] = useState(null)
@@ -63,7 +62,7 @@ export default function Sidebar({
             </div>
             <div className="flex-1 min-w-0">
               <h1 className="text-headline-sm text-primary">Qyron</h1>
-              <p className="text-label-md text-on-surface-variant truncate">{user?.name || 'User'}</p>
+              <p className="text-label-md text-on-surface-variant truncate">AI Assistant</p>
             </div>
           </div>
 
@@ -144,17 +143,6 @@ export default function Sidebar({
                 ))
               )}
             </div>
-          </div>
-
-          {/* Account */}
-          <div className="mt-auto pt-3 border-t border-outline-variant/30 px-2">
-            <button
-              onClick={() => { onOpenAccount(); onClose(); }}
-              className="flex items-center gap-3 px-3 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-low/50 transition-colors duration-200 w-full text-left"
-            >
-              <span className="material-symbols-outlined">person</span>
-              <span className="text-label-lg truncate">{user?.name || user?.email || 'Account'}</span>
-            </button>
           </div>
         </div>
       </aside>

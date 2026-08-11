@@ -8,35 +8,13 @@ services:
     healthCheckPath: /health
     autoDeploy: true
     envVars:
-      - key: DATABASE_URL
-        sync: false
       - key: OPENROUTER_API_KEY
         sync: false
       - key: OPENROUTER_MODEL
         value: google/gemini-2.0-flash-001
-      - key: SESSION_SECRET
-        generateValue: true
       - key: FRONTEND_URL
         sync: false
       - key: ENVIRONMENT
         value: production
-      - key: CHAT_RATE_LIMIT_PER_MINUTE
-        value: 20
-      - key: CHAT_DAILY_LIMIT
-        value: 200
-      - key: AUTH_RATE_LIMIT
-        value: 10
-      - key: AUTH_RATE_WINDOW
-        value: 300
       - key: GLOBAL_RATE_LIMIT_PER_MINUTE
         value: 120
-      - key: SMTP_HOST
-        sync: false
-      - key: SMTP_PORT
-        value: 587
-      - key: SMTP_USERNAME
-        sync: false
-      - key: SMTP_PASSWORD
-        sync: false
-      - key: EMAIL_FROM
-        sync: false

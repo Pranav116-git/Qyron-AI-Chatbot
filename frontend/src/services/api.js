@@ -1,62 +1,17 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
-let cachedCsrfToken = ''
-
-export async function fetchCsrfToken() {
-  try {
-    const response = await fetch(`${API_URL}/api/auth/csrf`, {
-      credentials: 'include',
-    })
-    if (response.ok) {
-      const data = await response.json()
-      if (data && data.csrf_token) {
-        cachedCsrfToken = data.csrf_token
-        return data.csrf_token
-      }
-    }
-  } catch (err) {
-    console.error('Failed to fetch CSRF token:', err)
-  }
-  return cachedCsrfToken
-}
-
-function getCsrfToken() {
-  return cachedCsrfToken
-}
-
 async function apiCall(endpoint, options = {}) {
   const headers = {
     'Content-Type': 'application/json',
     ...options.headers,
   }
 
-  if (options.method && options.method !== 'GET') {
-    if (!cachedCsrfToken) {
-      await fetchCsrfToken()
-    }
-    headers['X-CSRF-Token'] = getCsrfToken()
-  }
-
   const response = await fetch(`${API_URL}${endpoint}`, {
-    credentials: 'include',
     ...options,
     headers,
   })
 
   const data = await response.json().catch(() => null)
-
-  if (response.status === 401) {
-    const isAuthPage = ['/login', '/register', '/forgot-password', '/reset-password'].includes(window.location.pathname)
-    if (!isAuthPage) {
-      window.location.href = '/login'
-    }
-    throw new Error('Session expired. Please log in again.')
-  }
-
-  if (response.status === 403) {
-    window.location.reload()
-    throw new Error('Security token expired. Please try again.')
-  }
 
   if (!response.ok) {
     throw new Error(data?.detail || 'Something went wrong.')
@@ -66,18 +21,13 @@ async function apiCall(endpoint, options = {}) {
 }
 
 export async function sendMessage(messages, conversationId = null) {
-  if (!cachedCsrfToken) {
-    await fetchCsrfToken()
-  }
   let response
   try {
     response = await fetch(`${API_URL}/api/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRF-Token': getCsrfToken(),
       },
-      credentials: 'include',
       body: JSON.stringify({ messages, conversation_id: conversationId }),
     })
   } catch (err) {
@@ -90,14 +40,6 @@ export async function sendMessage(messages, conversationId = null) {
   if (!response.ok) {
     const error = await response.json().catch(() => null)
 
-    if (response.status === 401) {
-      window.location.href = '/login'
-      throw new Error('Session expired. Please log in again.')
-    }
-    if (response.status === 403) {
-      window.location.reload()
-      throw new Error('Security token expired. Please try again.')
-    }
     if (response.status === 429) {
       throw new Error(error?.detail || 'You\'re sending messages too quickly. Please wait a moment.')
     }
@@ -120,60 +62,6 @@ export async function sendMessage(messages, conversationId = null) {
 export async function checkHealth() {
   const response = await fetch(`${API_URL}/health`)
   return response.ok
-}
-
-export const authApi = {
-  login: (email, password) =>
-    apiCall('/api/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    }),
-
-  register: (name, email, password, confirmPassword) =>
-    apiCall('/api/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({ name, email, password, confirm_password: confirmPassword }),
-    }),
-
-  logout: () =>
-    apiCall('/api/auth/logout', { method: 'POST' }),
-
-  logoutAll: () =>
-    apiCall('/api/auth/logout-all', { method: 'POST' }),
-
-  me: () =>
-    apiCall('/api/auth/me'),
-
-  forgotPassword: (email) =>
-    apiCall('/api/auth/forgot-password', {
-      method: 'POST',
-      body: JSON.stringify({ email }),
-    }),
-
-  resetPassword: (token, password, confirmPassword) =>
-    apiCall('/api/auth/reset-password', {
-      method: 'POST',
-      body: JSON.stringify({ token, password, confirm_password: confirmPassword }),
-    }),
-
-  changePassword: (currentPassword, newPassword, confirmPassword) =>
-    apiCall('/api/auth/change-password', {
-      method: 'POST',
-      body: JSON.stringify({
-        current_password: currentPassword,
-        new_password: newPassword,
-        confirm_password: confirmPassword,
-      }),
-    }),
-
-  updateProfile: (name) =>
-    apiCall('/api/auth/profile', {
-      method: 'PUT',
-      body: JSON.stringify({ name }),
-    }),
-
-  deleteAccount: () =>
-    apiCall('/api/auth/account', { method: 'DELETE' }),
 }
 
 export const conversationsApi = {
@@ -209,40 +97,4 @@ export const conversationsApi = {
 
   search: (query) =>
     apiCall(`/api/conversations/search?q=${encodeURIComponent(query)}`),
-}
-
-export const savedPromptsApi = {
-  list: () =>
-    apiCall('/api/saved-prompts'),
-
-  create: (title, content) =>
-    apiCall('/api/saved-prompts', {
-      method: 'POST',
-      body: JSON.stringify({ title, content }),
-    }),
-
-  update: (id, title) =>
-    apiCall(`/api/saved-prompts/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify({ title }),
-    }),
-
-  delete: (id) =>
-    apiCall(`/api/saved-prompts/${id}`, { method: 'DELETE' }),
-}
-
-export const settingsApi = {
-  get: () =>
-    apiCall('/api/settings'),
-
-  update: (theme) =>
-    apiCall('/api/settings', {
-      method: 'PUT',
-      body: JSON.stringify({ theme }),
-    }),
-}
-
-export const usageApi = {
-  stats: () =>
-    apiCall('/api/usage/stats'),
 }

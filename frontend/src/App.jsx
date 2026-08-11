@@ -1,16 +1,8 @@
 import { useState, useCallback, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { AuthProvider, useAuth } from './contexts/AuthContext'
-import ProtectedRoute from './components/ProtectedRoute'
-import LoginPage from './pages/LoginPage'
-import RegisterPage from './pages/RegisterPage'
-import ForgotPasswordPage from './pages/ForgotPasswordPage'
-import ResetPasswordPage from './pages/ResetPasswordPage'
 import Sidebar from './components/Sidebar'
 import ChatWindow from './components/ChatWindow'
 import MessageInput from './components/MessageInput'
 import EmptyState from './components/EmptyState'
-import SettingsPanel from './components/SettingsPanel'
 import { useChat } from './hooks/useChat'
 import {
   getTheme,
@@ -18,36 +10,9 @@ import {
 } from './utils/storage'
 import {
   conversationsApi,
-  settingsApi,
 } from './services/api'
 
-function AuthPages() {
-  const [authView, setAuthView] = useState('login')
-
-  return (
-    <>
-      {authView === 'login' && (
-        <LoginPage
-          onSwitchToRegister={() => setAuthView('register')}
-          onSwitchToForgot={() => setAuthView('forgot')}
-        />
-      )}
-      {authView === 'register' && (
-        <RegisterPage
-          onSwitchToLogin={() => setAuthView('login')}
-        />
-      )}
-      {authView === 'forgot' && (
-        <ForgotPasswordPage
-          onSwitchToLogin={() => setAuthView('login')}
-        />
-      )}
-    </>
-  )
-}
-
 function ChatApp() {
-  const { user, logout } = useAuth()
   const {
     messages,
     isLoading,
@@ -65,7 +30,6 @@ function ChatApp() {
 
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [theme, setTheme] = useState(() => getTheme())
-  const [accountOpen, setAccountOpen] = useState(false)
   const [conversations, setConversations] = useState([])
   const [activeConversationId, setActiveConversationId] = useState(null)
   const [dataLoading, setDataLoading] = useState(true)
@@ -85,21 +49,10 @@ function ChatApp() {
     loadData()
   }, [])
 
-  useEffect(() => {
-    if (user) {
-      settingsApi.get().then(s => {
-        if (s.theme && s.theme !== theme) {
-          setTheme(s.theme)
-        }
-      }).catch(() => {})
-    }
-  }, [user])
-
   const toggleTheme = useCallback(() => {
     setTheme(prev => {
       const next = prev === 'dark' ? 'light' : 'dark'
       saveTheme(next)
-      settingsApi.update(next).catch(() => {})
       return next
     })
   }, [])
@@ -186,14 +139,6 @@ function ChatApp() {
     }
   }, [])
 
-  const handleLogout = useCallback(async () => {
-    await logout()
-    resetChat()
-    setConversations([])
-    setActiveConversationId(null)
-    setConversationId(null)
-  }, [logout, resetChat, setConversationId])
-
   return (
     <div className={theme === 'dark' ? 'dark' : ''}>
       <div className="flex h-screen bg-background text-on-background font-sans antialiased overflow-hidden atmospheric-bg">
@@ -205,9 +150,6 @@ function ChatApp() {
           onLoadConversation={handleLoadConversation}
           onDeleteConversation={handleDeleteConversation}
           onRenameConversation={handleRenameConversation}
-          user={user}
-          onLogout={handleLogout}
-          onOpenAccount={() => setAccountOpen(true)}
           activeConversationId={activeConversationId}
         />
 
@@ -254,53 +196,11 @@ function ChatApp() {
 
           <MessageInput onSend={handleSend} isLoading={isLoading} onStop={stopGeneration} editingMessage={editingMessage} onCancelEdit={handleCancelEdit} />
         </div>
-
-        {accountOpen && (
-          <SettingsPanel
-            onClose={() => setAccountOpen(false)}
-            user={user}
-            onLogout={handleLogout}
-          />
-        )}
       </div>
     </div>
   )
 }
 
-function AppRoutes() {
-  const { isAuthenticated, loading } = useAuth()
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center atmospheric-bg">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center animate-pulse">
-            <span className="material-symbols-outlined text-primary">auto_awesome</span>
-          </div>
-          <p className="text-on-surface-variant text-sm">Loading Qyron...</p>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <Routes>
-      <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <AuthPages />} />
-      <Route path="/register" element={isAuthenticated ? <Navigate to="/" replace /> : <AuthPages />} />
-      <Route path="/forgot-password" element={isAuthenticated ? <Navigate to="/" replace /> : <AuthPages />} />
-      <Route path="/reset-password" element={<ResetPasswordPage onSwitchToLogin={() => window.location.href = '/login'} />} />
-      <Route path="/" element={<ProtectedRoute><ChatApp /></ProtectedRoute>} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
-  )
-}
-
 export default function App() {
-  return (
-    <BrowserRouter>
-      <AuthProvider>
-        <AppRoutes />
-      </AuthProvider>
-    </BrowserRouter>
-  )
+  return <ChatApp />
 }

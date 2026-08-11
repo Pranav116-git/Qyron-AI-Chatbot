@@ -4,12 +4,11 @@ from sqlalchemy import select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models import User, Conversation, Message
+from app.models import Conversation, Message
 from app.schemas import (
     ConversationResponse, ConversationDetailResponse,
     RenameConversationRequest,
 )
-from app.auth import get_current_user
 
 router = APIRouter()
 
@@ -24,12 +23,10 @@ def generate_title(first_message: str) -> str:
 
 @router.get("/api/conversations", response_model=list[ConversationResponse])
 async def list_conversations(
-    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
         select(Conversation).where(
-            Conversation.user_id == user.id,
             Conversation.archived_at.is_(None),
         ).order_by(Conversation.updated_at.desc())
     )
@@ -49,12 +46,10 @@ async def list_conversations(
 
 @router.get("/api/conversations/archived", response_model=list[ConversationResponse])
 async def list_archived_conversations(
-    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
         select(Conversation).where(
-            Conversation.user_id == user.id,
             Conversation.archived_at.isnot(None),
         ).order_by(Conversation.archived_at.desc())
     )
@@ -75,13 +70,11 @@ async def list_archived_conversations(
 @router.get("/api/conversations/{conversation_id}", response_model=ConversationDetailResponse)
 async def get_conversation(
     conversation_id: str,
-    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
         select(Conversation).where(
             Conversation.id == conversation_id,
-            Conversation.user_id == user.id,
         )
     )
     conversation = result.scalar_one_or_none()
@@ -117,12 +110,10 @@ async def get_conversation(
 @router.post("/api/conversations", response_model=ConversationResponse)
 async def create_conversation(
     title: str = "New Conversation",
-    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     now = datetime.now(timezone.utc)
     conversation = Conversation(
-        user_id=user.id,
         title=title,
         created_at=now,
         updated_at=now,
@@ -144,13 +135,11 @@ async def create_conversation(
 async def update_conversation(
     conversation_id: str,
     request: RenameConversationRequest,
-    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
         select(Conversation).where(
             Conversation.id == conversation_id,
-            Conversation.user_id == user.id,
         )
     )
     conversation = result.scalar_one_or_none()
@@ -175,13 +164,11 @@ async def update_conversation(
 @router.post("/api/conversations/{conversation_id}/archive", response_model=ConversationResponse)
 async def archive_conversation(
     conversation_id: str,
-    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
         select(Conversation).where(
             Conversation.id == conversation_id,
-            Conversation.user_id == user.id,
         )
     )
     conversation = result.scalar_one_or_none()
@@ -206,13 +193,11 @@ async def archive_conversation(
 @router.post("/api/conversations/{conversation_id}/unarchive", response_model=ConversationResponse)
 async def unarchive_conversation(
     conversation_id: str,
-    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
         select(Conversation).where(
             Conversation.id == conversation_id,
-            Conversation.user_id == user.id,
         )
     )
     conversation = result.scalar_one_or_none()
@@ -237,13 +222,11 @@ async def unarchive_conversation(
 @router.delete("/api/conversations/{conversation_id}")
 async def delete_conversation(
     conversation_id: str,
-    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
         select(Conversation).where(
             Conversation.id == conversation_id,
-            Conversation.user_id == user.id,
         )
     )
     conversation = result.scalar_one_or_none()
@@ -260,13 +243,11 @@ async def delete_conversation(
 @router.get("/api/conversations/search", response_model=list[ConversationResponse])
 async def search_conversations(
     q: str = Query(..., min_length=1, max_length=100),
-    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     search_term = f"%{q}%"
     result = await db.execute(
         select(Conversation).where(
-            Conversation.user_id == user.id,
             Conversation.archived_at.is_(None),
             Conversation.title.ilike(search_term),
         ).order_by(Conversation.updated_at.desc()).limit(20)
