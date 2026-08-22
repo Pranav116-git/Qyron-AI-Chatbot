@@ -1,12 +1,13 @@
 from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Depends
-from sqlalchemy import select
+from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models import Conversation, Message
+from app.models import Conversation, Message, User
 from app.schemas import ChatRequest, ChatResponse
 from app.services.openrouter import get_ai_response
+from app.services.auth import get_current_user
 
 import logging
 
@@ -26,13 +27,17 @@ def _generate_title(first_message: str) -> str:
 @router.post("/api/chat", response_model=ChatResponse)
 async def chat(
     request: ChatRequest,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     conversation = None
     if request.conversation_id:
         result = await db.execute(
             select(Conversation).where(
-                Conversation.id == request.conversation_id,
+                and_(
+                    Conversation.id == request.conversation_id,
+                    Conversation.user_id == current_user.id,
+                )
             )
         )
         conversation = result.scalar_one_or_none()
@@ -45,6 +50,7 @@ async def chat(
         title = _generate_title(first_user_msg)
         now = datetime.now(timezone.utc)
         conversation = Conversation(
+            user_id=current_user.id,
             title=title,
             created_at=now,
             updated_at=now,

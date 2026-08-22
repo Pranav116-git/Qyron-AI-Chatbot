@@ -3,16 +3,15 @@ import Sidebar from './components/Sidebar'
 import ChatWindow from './components/ChatWindow'
 import MessageInput from './components/MessageInput'
 import EmptyState from './components/EmptyState'
+import LoginPage from './components/LoginPage'
+import RegisterPage from './components/RegisterPage'
 import { useChat } from './hooks/useChat'
-import {
-  getTheme,
-  saveTheme,
-} from './utils/storage'
-import {
-  conversationsApi,
-} from './services/api'
+import { AuthProvider, useAuth } from './context/AuthContext'
+import { getTheme, saveTheme } from './utils/storage'
+import { conversationsApi } from './services/api'
 
 function ChatApp() {
+  const { user, loading: authLoading, login, register, logout } = useAuth()
   const {
     messages,
     isLoading,
@@ -34,8 +33,16 @@ function ChatApp() {
   const [activeConversationId, setActiveConversationId] = useState(null)
   const [dataLoading, setDataLoading] = useState(true)
   const [editingMessage, setEditingMessage] = useState(null)
+  const [authView, setAuthView] = useState('login')
+  const [authError, setAuthError] = useState('')
 
   useEffect(() => {
+    if (!user) {
+      setConversations([])
+      setDataLoading(false)
+      return
+    }
+
     const loadData = async () => {
       try {
         const convs = await conversationsApi.list()
@@ -47,7 +54,7 @@ function ChatApp() {
       }
     }
     loadData()
-  }, [])
+  }, [user])
 
   const toggleTheme = useCallback(() => {
     setTheme(prev => {
@@ -139,6 +146,58 @@ function ChatApp() {
     }
   }, [])
 
+  const handleLogin = useCallback(async (email, password) => {
+    setAuthError('')
+    try {
+      await login(email, password)
+    } catch (err) {
+      setAuthError(err.message)
+      throw err
+    }
+  }, [login])
+
+  const handleRegister = useCallback(async (email, username, password) => {
+    setAuthError('')
+    try {
+      await register(email, username, password)
+    } catch (err) {
+      setAuthError(err.message)
+      throw err
+    }
+  }, [register])
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center atmospheric-bg">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center animate-pulse">
+            <span className="material-symbols-outlined text-primary text-2xl">auto_awesome</span>
+          </div>
+          <p className="text-on-surface-variant">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    if (authView === 'register') {
+      return (
+        <RegisterPage
+          onRegister={handleRegister}
+          onSwitchToLogin={() => { setAuthView('login'); setAuthError('') }}
+          error={authError}
+        />
+      )
+    }
+    return (
+      <LoginPage
+        onLogin={handleLogin}
+        onSwitchToRegister={() => { setAuthView('register'); setAuthError('') }}
+        error={authError}
+      />
+    )
+  }
+
   return (
     <div className={theme === 'dark' ? 'dark' : ''}>
       <div className="flex h-screen bg-background text-on-background font-sans antialiased overflow-hidden atmospheric-bg">
@@ -151,6 +210,8 @@ function ChatApp() {
           onDeleteConversation={handleDeleteConversation}
           onRenameConversation={handleRenameConversation}
           activeConversationId={activeConversationId}
+          user={user}
+          onLogout={logout}
         />
 
         <div className="flex-1 flex flex-col min-w-0 md:ml-72 relative w-full">
@@ -202,5 +263,9 @@ function ChatApp() {
 }
 
 export default function App() {
-  return <ChatApp />
+  return (
+    <AuthProvider>
+      <ChatApp />
+    </AuthProvider>
+  )
 }

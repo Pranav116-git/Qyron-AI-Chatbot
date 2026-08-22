@@ -5,6 +5,7 @@ export default function Sidebar({
   conversations,
   onLoadConversation, onDeleteConversation, onRenameConversation,
   activeConversationId,
+  user, onLogout,
 }) {
   const [renamingId, setRenamingId] = useState(null)
   const [renameValue, setRenameValue] = useState('')
@@ -144,6 +145,28 @@ export default function Sidebar({
               )}
             </div>
           </div>
+
+          {/* User info + logout */}
+          {user && (
+            <div className="px-4 pt-3 border-t border-outline-variant/30">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-8 h-8 rounded-full bg-primary-container/30 flex items-center justify-center flex-shrink-0">
+                  <span className="text-sm font-medium text-primary">{user.username.charAt(0).toUpperCase()}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-on-surface truncate">{user.username}</p>
+                  <p className="text-xs text-on-surface-variant truncate">{user.email}</p>
+                </div>
+              </div>
+              <button
+                onClick={onLogout}
+                className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-on-surface-variant hover:bg-error-container/20 hover:text-error transition-colors text-sm"
+              >
+                <span className="material-symbols-outlined text-lg">logout</span>
+                <span>Sign out</span>
+              </button>
+            </div>
+          )}
         </div>
       </aside>
     </>

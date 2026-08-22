@@ -1,10 +1,11 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from app.config import FRONTEND_URL, GLOBAL_RATE_LIMIT_PER_MINUTE
+from app.config import FRONTEND_URL, GLOBAL_RATE_LIMIT_PER_MINUTE, CHAT_RATE_LIMIT_PER_MINUTE
 from app.routes.chat import router as chat_router
 from app.routes.conversations import router as conversations_router
+from app.routes.auth import router as auth_router
 from app.database import init_db
-from app.middleware.security import SecurityHeadersMiddleware, RateLimitMiddleware
+from app.middleware.security import SecurityHeadersMiddleware, RateLimitMiddleware, ChatRateLimitMiddleware
 import logging
 
 logging.basicConfig(
@@ -15,21 +16,25 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Qyron API", docs_url=None, redoc_url=None)
 
+app.add_middleware(ChatRateLimitMiddleware, requests_per_minute=CHAT_RATE_LIMIT_PER_MINUTE)
 app.add_middleware(RateLimitMiddleware, requests_per_minute=GLOBAL_RATE_LIMIT_PER_MINUTE)
 app.add_middleware(SecurityHeadersMiddleware)
 
 from fastapi.middleware.cors import CORSMiddleware
 
+ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://localhost:3000",
+]
+if FRONTEND_URL:
+    ALLOWED_ORIGINS.append(FRONTEND_URL)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:3000",
-        FRONTEND_URL,
-    ],
-    allow_credentials=False,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 
@@ -49,6 +54,7 @@ async def startup():
     logger.info("Database initialized.")
 
 
+app.include_router(auth_router)
 app.include_router(chat_router)
 app.include_router(conversations_router)
 
