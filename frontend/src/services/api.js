@@ -1,4 +1,5 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const RAW_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const API_URL = RAW_API_URL.replace(/\/+$/, '').replace(/\/api$/, '')
 
 function getToken() {
   return localStorage.getItem('qyron-token')
@@ -101,6 +102,12 @@ export const authApi = {
     apiCall('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
+    }),
+
+  googleLogin: (credential) =>
+    apiCall('/api/auth/google', {
+      method: 'POST',
+      body: JSON.stringify({ credential }),
     }),
 
   getMe: (token) =>

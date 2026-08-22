@@ -1,6 +1,7 @@
 import { useState } from 'react'
+import GoogleAuthButton from './GoogleAuthButton'
 
-export default function LoginPage({ onLogin, onSwitchToRegister, error }) {
+export default function LoginPage({ onLogin, onGoogleLogin, onSwitchToRegister, error }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -18,6 +19,19 @@ export default function LoginPage({ onLogin, onSwitchToRegister, error }) {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  const handleGoogleSuccess = async (credential) => {
+    setLocalError('')
+    try {
+      await onGoogleLogin(credential)
+    } catch (err) {
+      setLocalError(err.message || 'Google sign-in failed. Please try again.')
+    }
+  }
+
+  const handleGoogleError = (message) => {
+    setLocalError(message)
   }
 
   const displayError = localError || error
@@ -45,6 +59,19 @@ export default function LoginPage({ onLogin, onSwitchToRegister, error }) {
               <p className="text-sm text-error">{displayError}</p>
             </div>
           )}
+
+          <div className="mb-4">
+            <GoogleAuthButton
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+            />
+          </div>
+
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex-1 h-px bg-outline-variant/50"></div>
+            <span className="text-xs text-on-surface-variant/70 uppercase tracking-wide">or</span>
+            <div className="flex-1 h-px bg-outline-variant/50"></div>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>

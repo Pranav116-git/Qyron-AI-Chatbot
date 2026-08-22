@@ -26,3 +26,5 @@ services:
         value: 20
       - key: JWT_EXPIRY_MINUTES
         value: 10080
+      - key: GOOGLE_CLIENT_ID
+        sync: false

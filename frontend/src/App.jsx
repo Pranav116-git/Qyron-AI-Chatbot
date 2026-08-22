@@ -11,7 +11,7 @@ import { getTheme, saveTheme } from './utils/storage'
 import { conversationsApi } from './services/api'
 
 function ChatApp() {
-  const { user, loading: authLoading, login, register, logout } = useAuth()
+  const { user, loading: authLoading, login, register, googleLogin, logout } = useAuth()
   const {
     messages,
     isLoading,
@@ -166,6 +166,16 @@ function ChatApp() {
     }
   }, [register])
 
+  const handleGoogleLogin = useCallback(async (credential) => {
+    setAuthError('')
+    try {
+      await googleLogin(credential)
+    } catch (err) {
+      setAuthError(err.message)
+      throw err
+    }
+  }, [googleLogin])
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center atmospheric-bg">
@@ -184,6 +194,7 @@ function ChatApp() {
       return (
         <RegisterPage
           onRegister={handleRegister}
+          onGoogleLogin={handleGoogleLogin}
           onSwitchToLogin={() => { setAuthView('login'); setAuthError('') }}
           error={authError}
         />
@@ -192,6 +203,7 @@ function ChatApp() {
     return (
       <LoginPage
         onLogin={handleLogin}
+        onGoogleLogin={handleGoogleLogin}
         onSwitchToRegister={() => { setAuthView('register'); setAuthError('') }}
         error={authError}
       />

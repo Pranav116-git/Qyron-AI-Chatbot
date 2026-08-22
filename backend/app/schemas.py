@@ -13,6 +13,10 @@ class LoginRequest(BaseModel):
     password: str = Field(..., min_length=1, max_length=128)
 
 
+class GoogleLoginRequest(BaseModel):
+    credential: str = Field(..., min_length=1)
+
+
 class AuthResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
@@ -23,6 +27,7 @@ class UserResponse(BaseModel):
     id: str
     email: str
     username: str
+    auth_provider: str = "email"
 
 
 class Message(BaseModel):

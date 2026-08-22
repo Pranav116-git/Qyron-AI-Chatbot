@@ -1,6 +1,7 @@
 import { useState } from 'react'
+import GoogleAuthButton from './GoogleAuthButton'
 
-export default function RegisterPage({ onRegister, onSwitchToLogin, error }) {
+export default function RegisterPage({ onRegister, onGoogleLogin, onSwitchToLogin, error }) {
   const [email, setEmail] = useState('')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -33,6 +34,19 @@ export default function RegisterPage({ onRegister, onSwitchToLogin, error }) {
     }
   }
 
+  const handleGoogleSuccess = async (credential) => {
+    setLocalError('')
+    try {
+      await onGoogleLogin(credential)
+    } catch (err) {
+      setLocalError(err.message || 'Google sign-in failed. Please try again.')
+    }
+  }
+
+  const handleGoogleError = (message) => {
+    setLocalError(message)
+  }
+
   const displayError = localError || error
 
   return (
@@ -58,6 +72,20 @@ export default function RegisterPage({ onRegister, onSwitchToLogin, error }) {
               <p className="text-sm text-error">{displayError}</p>
             </div>
           )}
+
+          <div className="mb-4">
+            <GoogleAuthButton
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+              text="Continue with Google"
+            />
+          </div>
+
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex-1 h-px bg-outline-variant/50"></div>
+            <span className="text-xs text-on-surface-variant/70 uppercase tracking-wide">or</span>
+            <div className="flex-1 h-px bg-outline-variant/50"></div>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -103,6 +131,7 @@ export default function RegisterPage({ onRegister, onSwitchToLogin, error }) {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Repeat your password"
                 required
+                minLength={6}
                 className="w-full px-4 py-3 rounded-xl bg-surface-container-low/50 border border-outline-variant/50 text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all"
               />
             </div>
