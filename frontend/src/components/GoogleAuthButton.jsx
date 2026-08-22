@@ -17,41 +17,53 @@ export default function GoogleAuthButton({ onSuccess, onError, text = 'Continue 
       if (window.google?.accounts?.id) {
         clearInterval(checkGoogle)
         setLoaded(true)
-
-        window.google.accounts.id.initialize({
-          client_id: GOOGLE_CLIENT_ID,
-          callback: (response) => {
-            if (response.credential) {
-              onSuccess(response.credential)
-            } else {
-              onError?.('Google authentication was cancelled.')
-            }
-          },
-          error_callback: (err) => {
-            if (err.type === 'popup_failed_to_open') {
-              onError?.('Could not open Google sign-in popup. Please allow popups.')
-            } else if (err.type === 'popup_closed') {
-              onError?.('Google sign-in was cancelled.')
-            } else {
-              onError?.('Google authentication failed. Please try again.')
-            }
-          },
-        })
-
-        window.google.accounts.id.renderButton(buttonRef.current, {
-          type: 'standard',
-          size: 'large',
-          width: buttonRef.current?.parentElement?.offsetWidth || 320,
-          text: 'continue_with',
-          shape: 'rectangular',
-          theme: 'outline',
-          logo_alignment: 'left',
-        })
       }
     }, 100)
 
     return () => clearInterval(checkGoogle)
   }, [])
+
+  useEffect(() => {
+    if (!loaded || !buttonRef.current || !GOOGLE_CLIENT_ID) return
+
+    try {
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: (response) => {
+          if (response.credential) {
+            onSuccess(response.credential)
+          } else {
+            onError?.('Google authentication was cancelled.')
+          }
+        },
+        error_callback: (err) => {
+          if (err.type === 'popup_failed_to_open') {
+            onError?.('Could not open Google sign-in popup. Please allow popups.')
+          } else if (err.type === 'popup_closed') {
+            onError?.('Google sign-in was cancelled.')
+          } else {
+            onError?.('Google authentication failed. Please try again.')
+          }
+        },
+      })
+
+      const containerWidth = buttonRef.current.parentElement?.offsetWidth || 320
+      const targetWidth = Math.min(Math.max(containerWidth, 200), 400)
+
+      window.google.accounts.id.renderButton(buttonRef.current, {
+        type: 'standard',
+        size: 'large',
+        width: targetWidth,
+        text: 'continue_with',
+        shape: 'rectangular',
+        theme: 'outline',
+        logo_alignment: 'left',
+      })
+    } catch (err) {
+      console.error('Google Sign-In render error:', err)
+      setError('Failed to initialize Google Sign-In button.')
+    }
+  }, [loaded, onSuccess, onError])
 
   if (error) {
     return (
@@ -61,15 +73,17 @@ export default function GoogleAuthButton({ onSuccess, onError, text = 'Continue 
     )
   }
 
-  if (!loaded) {
-    return (
-      <div className="w-full py-3 px-4 rounded-xl border border-outline-variant/50 text-on-surface-variant text-sm text-center animate-pulse bg-surface-container-low/30">
-        Loading Google Sign-In...
-      </div>
-    )
-  }
-
   return (
-    <div className="w-full" ref={buttonRef} />
+    <div className="w-full relative">
+      {!loaded && (
+        <div className="w-full py-3 px-4 rounded-xl border border-outline-variant/50 text-on-surface-variant text-sm text-center animate-pulse bg-surface-container-low/30">
+          Loading Google Sign-In...
+        </div>
+      )}
+      <div
+        ref={buttonRef}
+        className={`w-full flex justify-center ${!loaded ? 'hidden' : ''}`}
+      />
+    </div>
   )
 }

@@ -15,10 +15,18 @@ async function apiCall(endpoint, options = {}) {
     headers['Authorization'] = `Bearer ${token}`
   }
 
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
-    headers,
-  })
+  let response
+  try {
+    response = await fetch(`${API_URL}${endpoint}`, {
+      ...options,
+      headers,
+    })
+  } catch (err) {
+    if (err.name === 'TypeError' && err.message === 'Failed to fetch') {
+      throw new Error('Unable to connect to Qyron server. Please check your connection and try again.')
+    }
+    throw new Error(err.message || 'Network request failed.')
+  }
 
   if (response.status === 401) {
     localStorage.removeItem('qyron-token')
